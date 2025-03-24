@@ -63,8 +63,6 @@ from proxy_handler import get_random_proxy
 from user_simulation import get_random_mobile_user_agent, get_random_fingerprint
 from website_visitor import WebsiteVisitor
 
-# ... (начало файла без изменений)
-
 def main():
     check_and_install_libraries()
 
