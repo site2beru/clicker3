@@ -1,17 +1,3 @@
-import random
-import time
-import logging
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException, InvalidCookieDomainException
-from browser_config import setup_browser
-from proxy_handler import get_random_proxy
-from user_simulation import get_random_mobile_user_agent, get_random_fingerprint
-
-logger = logging.getLogger(__name__)
-
 # посещение dzen, яндекс и сайта
 
 import random
