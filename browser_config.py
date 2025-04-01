@@ -18,8 +18,9 @@ def setup_browser(user_agent, fingerprint, proxy=None, headless=False, initial_u
     options.add_argument('--disable-webrtc')
     options.add_argument('--disable-infobars')
     options.add_argument('--disable-notifications')
-    # headless режим удобен, но в нем бот не всегда может найти кнопку "Показать еще"
+
     options.add_argument('--headless')
+    options.add_argument('--disable-gpu')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
 

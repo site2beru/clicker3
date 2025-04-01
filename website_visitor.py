@@ -1,5 +1,3 @@
-# посещение dzen, яндекс и сайта
-
 import random
 import time
 import logging
@@ -7,12 +5,14 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException
+from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException, InvalidCookieDomainException
 from browser_config import setup_browser
 from proxy_handler import get_random_proxy
 from user_simulation import get_random_mobile_user_agent, get_random_fingerprint
 
 logger = logging.getLogger(__name__)
+
+# посещение dzen, яндекс и сайта
 
 class WebsiteVisitor:
     def __init__(self):
@@ -21,9 +21,13 @@ class WebsiteVisitor:
             '.serp-item a.link',               # Мобильная версия
             '.serp-item a.Link_theme_normal',  # Мобильная версия
             '.organic__url',                   # Мобильная версия
+            '.organic__greenurl',
+            '.Link_theme_outer',
+            '.Link',
             '//a[contains(@href, "clck.yandex.ru")]',  # Мобильная версия
             '//a[contains(@class, "OrganicTitle-Link")]',  # Десктопная версия
-            '//a[contains(@class, "link_theme_outer")]',   # Десктопная версия
+            '//a[contains(@class, "Link")]',  # Десктопная версия
+            '//a[contains(@class, "Link Link_theme_outer Path-Item link path__item organic__greenurl")]',   # Десктопная версия
             '//h3[contains(@class, "OrganicTitle")]/parent::a'  # Десктопная версия
         ]
         self.next_page_selectors = [
@@ -34,7 +38,7 @@ class WebsiteVisitor:
             '//a[contains(@class, "Pager-Item_type_next")]'  # Десктопная версия
         ]
 
-    def simulate_visit(self, target_website, search_query, use_proxy=True, max_pages=5):
+    def simulate_visit(self, target_region, target_website, search_query, use_proxy=True, max_pages=5):
         attempt = 0
         max_attempts = 100
 
@@ -61,6 +65,10 @@ class WebsiteVisitor:
                 try:
                     driver.add_cookie({"name": "session_id", "value": f"session_{random.randint(1000, 9999)}", "domain": "dzen.ru"})
                     logger.info("Установлен cookie для домена: dzen.ru")
+
+                    logger.info(f"UA: {user_agent}")
+                    logger.info(f"Разрешение: {fingerprint}")
+
                 except InvalidCookieDomainException:
                     logger.warning("Не удалось установить cookie, продолжаем без него")
 
@@ -68,26 +76,30 @@ class WebsiteVisitor:
 
                 if self._check_captcha(driver):
                     logger.warning("Нашли капчу на начальной странице dzen.ru, продолжаем")
-
                 try:
-                    search_input = WebDriverWait(driver, 10).until(
+                    cap_button = WebDriverWait(driver, 3).until(
+                        EC.element_to_be_clickable((By.XPATH, '//input[@class="CheckboxCaptcha-Button"]')))
+                    cap_button.click()
+                    logger.info("Кликнули по капче и ждем, что из этого выйдет")
+
+                    search_input = WebDriverWait(driver, 3).until(
                         EC.element_to_be_clickable((By.XPATH, '//input[@aria-label="Запрос"]'))
                     )
                     logger.info("Поисковая строка найдена напрямую на странице")
                 except TimeoutException:
-                    logger.info("Поисковая строка не найдена напрямую, ищем в iframe")
+                    #logger.info("Поисковая строка не найдена напрямую, ищем в iframe")
                     try:
-                        iframe = WebDriverWait(driver, 10).until(
+                        iframe = WebDriverWait(driver, 3).until(
                             EC.presence_of_element_located((By.XPATH, '//iframe[contains(@src, "dzen.ru")]'))
                         )
                         driver.switch_to.frame(iframe)
-                        search_input = WebDriverWait(driver, 10).until(
+                        search_input = WebDriverWait(driver, 3).until(
                             EC.element_to_be_clickable((By.XPATH, '//input[@aria-label="Запрос"]'))
                         )
                         logger.info("Поисковая строка найдена в iframe")
                     except TimeoutException:
-                        logger.error("Не удалось найти поисковую строку ни напрямую, ни в iframe")
-                        driver.save_screenshot(f"search_input_error_{int(time.time())}.png")
+                        logger.error("Не удалось найти поисковую строку ни напрямую, ни в iframe — скорее всего не прошли капчу")
+                        #driver.save_screenshot(f"search_input_error_{int(time.time())}.png")
                         driver.quit()
                         return False
 
@@ -106,6 +118,31 @@ class WebsiteVisitor:
                     if len(driver.window_handles) > 1:
                         driver.switch_to.window(driver.window_handles[-1])
                         logger.info(f"Переключились на {driver.current_url}")
+
+                        # ищем, что за город у нас установлен
+                    try:
+                        city_button = WebDriverWait(driver, 4).until(
+                            EC.presence_of_element_located((By.XPATH, "//a[contains(@aria-label, 'Ваш регион ')]"))
+                        )
+                        logger.info("Нашли ссылку переключения города")
+                        city_button.click()
+
+                        # переключаем город
+                        driver.switch_to.window(driver.window_handles[-1])
+                        logger.info("Мы на странице смены города")
+                        city_input = WebDriverWait(driver, 4).until(
+                            EC.presence_of_element_located((By.XPATH, "//input[@name='name']"))
+                        )
+                        city_input.clear()
+                        city_input.send_keys(target_region)
+                        logger.info(f"Ввели регион {target_region}")
+                        city_input.send_keys(Keys.ENTER)
+
+                    except TimeoutException:
+                        logger.info("Не нашли ссылку переключения города")
+                        # if city_button title != {target_region}
+                        # input placeholder="Город"
+
                 except TimeoutException:
                     logger.info(f"Остались на: {driver.current_url}")
 
@@ -117,13 +154,14 @@ class WebsiteVisitor:
 
                 # Ожидаем загрузки результатов поиска
                 try:
-                    WebDriverWait(driver, 10).until(
+                    WebDriverWait(driver, 8).until(
                         EC.presence_of_element_located((By.XPATH, "//div[contains(@class, 'serp-item')] | //li[contains(@class, 'serp-item')]"))
                     )
                     logger.info("Результаты поиска загружены")
+
                 except TimeoutException:
                     logger.error(f"Не удалось найти результаты поиска. URL: {driver.current_url}")
-                    driver.save_screenshot(f"search_results_error_{int(time.time())}.png")
+                    #driver.save_screenshot(f"search_results_error_{int(time.time())}.png")
                     driver.quit()
                     continue
 
@@ -132,7 +170,7 @@ class WebsiteVisitor:
                     logger.info(f"Ищем на странице {page + 1}/{max_pages}")
                     found = self._find_and_click_target(driver, target_website)
                     if found:
-                        visit_time = random.uniform(0.1, 0.3)
+                        visit_time = random.uniform(0.0, 0.0)
                         logger.info(f"Зашли и вышли Морти, приключение на {visit_time:.1f} секунд!")
                         time.sleep(visit_time)
                         logger.info("Успешно сходили на сайт")
@@ -152,7 +190,7 @@ class WebsiteVisitor:
             except Exception as e:
                 logger.error(f"Ошибка: {e}", exc_info=True)
                 if driver:
-                    driver.save_screenshot(f"error_{int(time.time())}.png")
+                    #driver.save_screenshot(f"error_{int(time.time())}.png")
                     driver.quit()
                 return False
 
@@ -216,12 +254,12 @@ class WebsiteVisitor:
         for selector in self.next_page_selectors:
             try:
                 method = By.XPATH if selector.startswith('//') else By.CSS_SELECTOR
-                next_button = WebDriverWait(driver, 10).until(
+                next_button = WebDriverWait(driver, 8).until(
                     EC.element_to_be_clickable((method, selector))
                 )
                 driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", next_button)
                 next_button.click()
-                WebDriverWait(driver, 10).until(
+                WebDriverWait(driver, 8).until(
                     EC.presence_of_element_located((By.XPATH, "//div[contains(@class, 'serp-item')]"))
                 )
                 logger.info("Перешли на следующую страницу")

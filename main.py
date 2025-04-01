@@ -17,12 +17,12 @@
 # browser_config — конфигурация
 # website_visitor — процесс поиска по страницам
 # user_simulation – настройки девайса пользователя
-#
-# комменты для headless
+[#
+]# комменты для headless
 #
 # 14.03.2025 — добавлена проверка библиотек
 #
-# note: с проверкой на робота случаются проблемы
+# note: убрать нафиг установку модулей ибо не работает
 
 import random
 import time
@@ -67,21 +67,22 @@ def main():
     check_and_install_libraries()
 
     visitor = WebsiteVisitor()
-    target_website = "laser-tambov.ru"
-    search_keywords = ["эпиляция тамбов"]
-    max_attempts = 100
-    successful_visits = 0
+    target_region = "Тамбов" # где ищем
+    target_website = "laser-tambov.ru" # что ищем
+    search_keywords = ["эпиляция тамбов"] # по какому запросу ищем
+    max_attempts = 70 # сколько раз ищем
+    successful_visits = 0 # щётчег удачных поисков
 
     for attempt in range(max_attempts):
         logger.info(f"Попытка {attempt + 1}/{max_attempts}")
-        # передаем первый элемент списка ключевых слов
-        success = visitor.simulate_visit(target_website, search_keywords[0], use_proxy=False, max_pages=5)
+
+        success = visitor.simulate_visit(target_region, target_website, search_keywords[0], use_proxy=False, max_pages=5)
         if success:
             successful_visits += 1
-            #logger.info("Успешно посетили целевой сайт")
+
         else:
             logger.warning("Не удалось найти сайт")
-        sleep_time = random.uniform(5, 11) if attempt < 2 else random.uniform(5, 15)
+        sleep_time = random.uniform(5, 6) if attempt < 2 else random.uniform(5, 15)
         logger.info(f"Ожидаем {sleep_time:.1f} секунд перед следующей попыткой")
         time.sleep(sleep_time)
 
