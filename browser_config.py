@@ -18,9 +18,16 @@ def setup_browser(user_agent, fingerprint, proxy=None, headless=False, initial_u
     options.add_argument('--disable-webrtc')
     options.add_argument('--disable-infobars')
     options.add_argument('--disable-notifications')
+    options.add_argument('--disable-web-security')  # Для обхода некоторых ограничений
+    options.add_argument('--disable-extensions')
+    options.add_argument('--disable-popup-blocking')
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option('useAutomationExtension', False)
+    options.add_argument('--disable-browser-side-navigation')  # Уменьшает вероятность банов
 
-    options.add_argument('--headless')
-    options.add_argument('--disable-gpu')
+    #options.add_argument('--headless')
+    #options.add_argument('--disable-gpu')
+    options.addArguments("--incognito");
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
 

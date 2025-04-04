@@ -140,8 +140,6 @@ class WebsiteVisitor:
 
                     except TimeoutException:
                         logger.info("Не нашли ссылку переключения города")
-                        # if city_button title != {target_region}
-                        # input placeholder="Город"
 
                 except TimeoutException:
                     logger.info(f"Остались на: {driver.current_url}")
@@ -170,7 +168,7 @@ class WebsiteVisitor:
                     logger.info(f"Ищем на странице {page + 1}/{max_pages}")
                     found = self._find_and_click_target(driver, target_website)
                     if found:
-                        visit_time = random.uniform(0.0, 0.0)
+                        visit_time = random.uniform(1, 2)
                         logger.info(f"Зашли и вышли Морти, приключение на {visit_time:.1f} секунд!")
                         time.sleep(visit_time)
                         logger.info("Успешно сходили на сайт")
@@ -225,6 +223,7 @@ class WebsiteVisitor:
                         logger.debug(f"Нашли ссылку {href}")
                         if target_website in href:
                             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", result)
+                            time.sleep(random.uniform(0.6, 2))
                             logger.info(f"Кликаем на {href} и уходим")
                             try:
                                 driver.execute_script("arguments[0].click();", result)

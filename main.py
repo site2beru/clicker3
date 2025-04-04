@@ -20,8 +20,6 @@
 [#
 ]# комменты для headless
 #
-# 14.03.2025 — добавлена проверка библиотек
-#
 # note: убрать нафиг установку модулей ибо не работает
 
 import random
@@ -47,7 +45,7 @@ def check_and_install_libraries():
     for module_name, package_name in REQUIRED_LIBRARIES.items():
         try:
             importlib.import_module(module_name)
-            logger.info(f"Библиотека '{module_name}' уже установлена")
+            logger.info(f"Библиотека '{module_name}' установлена")
         except ImportError:
             logger.warning(f"Библиотека '{module_name}' не найдена, устанавливаем...")
             try:
@@ -70,8 +68,8 @@ def main():
     target_region = "Тамбов" # где ищем
     target_website = "laser-tambov.ru" # что ищем
     search_keywords = ["эпиляция тамбов"] # по какому запросу ищем
-    max_attempts = 70 # сколько раз ищем
-    successful_visits = 0 # щётчег удачных поисков
+    max_attempts = 12 # сколько раз ищем
+    successful_visits = 0 # щётчег удачных поисков — не изменять
 
     for attempt in range(max_attempts):
         logger.info(f"Попытка {attempt + 1}/{max_attempts}")
